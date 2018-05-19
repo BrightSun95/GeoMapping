@@ -9,9 +9,9 @@ var growth_color = d3.scaleThreshold()
                 .range(['#cb181d','#fb6a4a','#fcae91','#fee5d9', '#eff3ff','#bdd7e7','#6baed6','#3182bd','#08519c']);
 
 //Define Margin
-var margin = {left: 80, right: 80, top: 50, bottom: 50 },
+var margin = {left: 90, right: 80, top: 50, bottom: 50 },
     width = 960 - margin.left -margin.right,
-    height = 500 - margin.top - margin.bottom;
+    height = 600 - margin.top - margin.bottom;
 
 //Define SVG
 var svg = d3.select("body")
@@ -34,6 +34,8 @@ var path = d3.geoPath()
 // used for toggling between growth_rate and population_density
 var toggle = false;
 
+d3.select("h1").style("text-align", "center");
+
 d3.csv("turkey_data.csv", function(data){
     
     var d_min = d3.min(data, function(d) { return +d.density; });
@@ -42,13 +44,10 @@ d3.csv("turkey_data.csv", function(data){
     var g_min = d3.min(data, function(d) { return +d.growth_rate; });
     var g_max = d3.max(data, function(d) { return +d.growth_rate; });
     
-    console.log("g_min: " + g_min);
-    console.log("g_max: " + g_max);
-    
     density_color.domain([ d_min-1, 20, 50, 75, 100, 300, 500, 1000, d_max ]);
     growth_color.domain([ -15, -10, -5, 0, 5, 10, 15, 20, 35 ]);
     
-    d3.json("turkey_simple_01.json", function(json){
+    d3.json("turkey.json", function(json){
         //Merge the ag. data and GeoJSON
         //Loop through once for each ag. data value
         for (var i = 0; i < data.length; i++) {
@@ -98,21 +97,43 @@ d3.csv("turkey_data.csv", function(data){
            .style("stroke", "000");
         
         svg.append("g")
-            .attr("class", "legendQuant")
-            .attr("transform", "translate(0,350)");
+            .attr("id", "d_legend")
+            .attr("transform", "translate(-30,380)");
         
-        svg.select(".legendQuant")
-            .call(legend);
+        svg.select("#d_legend")
+            .call(density_legend);
+        
+        svg.append("g")
+            .attr("id", "g_legend")
+            .attr("transform", "translate(-30,475)");
+        
+        svg.select("#g_legend")
+            .call(growth_legend);
 
     });
 })
 
+var density_legend = d3.legendColor()
+    .labelFormat(d3.format(".2d"))
+    .labels(d3.legendHelpers.thresholdLabels)
+    .scale(density_color)
+    .shapeWidth(90)
+    .orient("horizontal")
+    .title("People per square kilometer");
 
-var scale;
+var growth_legend = d3.legendColor()
+    .labelFormat(d3.format(".2d"))
+    .labels(d3.legendHelpers.thresholdLabels)
+    .scale(growth_color)
+    .shapeWidth(90)
+    .orient("horizontal")
+    .title("Growth Rate (% change)");
+
 function toggleVar(d){
     toggle = !toggle;
     svg.selectAll("path").style("fill", function(d) {
         //Get data value
+        var scale;
         var value;
         if(!toggle){
             scale = density_color;
@@ -126,7 +147,7 @@ function toggleVar(d){
             return scale(value);
         } else {
             //If value is undefined…
-            return "#000";
+            return "#ccc";
         }
        })
 }
@@ -135,15 +156,6 @@ function precisionRound(number, precision) {
     var factor = Math.pow(10, precision);
     return Math.round(number * factor) / factor;
 }
-
-
-var legend = d3.legendColor()
-    .labelFormat(d3.format(".2d"))
-    .labels(d3.legendHelpers.thresholdLabels)
-    .scale(density_color)
-    .shapeWidth(100)
-    .orient("horizontal")
-    .title("people per km2");
 
 
 //**************************************************************************
